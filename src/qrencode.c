@@ -10,24 +10,18 @@ static EncodingMode calculateEncodingMode(char* data) {
     EncodingMode encodingMode = MODE_NUMERIC;
     for (int i = 0; i < dataLength; i++) {
         char c = data[i];
-        // TODO: Fix 'a' causing a crash -- it's because we only calculate the encoding mode
-        // once per char in data
-        switch (encodingMode) {
-            case MODE_NUMERIC:
-                if (isdigit(c) == 0)
-                    encodingMode = MODE_ALPHANUMERIC;
-                break;
-            case MODE_ALPHANUMERIC:
-                if (!(isdigit(c) || isupper(c)) && (strchr(" $%*+-./:", c) == NULL))
-                    encodingMode = MODE_BYTE;
-                break;
-            case MODE_BYTE:
-                return encodingMode;
-            case MODE_KANJI:
-                break;
-            case MODE_ECI:
-                break;
+        if (encodingMode == MODE_NUMERIC) {
+            if (isdigit(c) == 0)
+                encodingMode = MODE_ALPHANUMERIC;
         }
+
+        if (encodingMode == MODE_ALPHANUMERIC) {
+            if (!(isdigit(c) || isupper(c)) && (strchr(" $%*+-./:", c) == NULL))
+                encodingMode = MODE_BYTE;
+        }
+
+        if (encodingMode == MODE_BYTE)
+            return encodingMode;
     }
 
     return encodingMode;
