@@ -6,8 +6,6 @@ BIN_DIR := .
 
 EXE := $(BIN_DIR)/qr
 SRC := $(wildcard $(SRC_DIR)/*.c)
-# Don't compile old test file
-SRC := $(filter-out src/qrtest.c, $(SRC))
 OBJ := $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 CPPFLAGS := -Iinclude -MMD -MP
