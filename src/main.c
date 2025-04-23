@@ -5,7 +5,6 @@
 
 #include "qrencode.h"
 
-void printUsageMessage(const char* progName);
 void printHelpMessage(const char* progName);
 
 int main(int argc, char** argv) {
@@ -44,7 +43,7 @@ int main(int argc, char** argv) {
                 verbose = true;
                 break;
             default:
-                printUsageMessage(argv[0]);
+                fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
                 exit(EXIT_FAILURE);
         }
     }
@@ -63,8 +62,8 @@ int main(int argc, char** argv) {
     QR* qr = createQRCode(message, ecLevel);;
 
     if (verbose) {
-        printf("Message: %s\n", message);
-        printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
+        fprintf(stderr, "Message: %s\n", message);
+        fprintf(stderr, "Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
     }
 
     printQR(qr);
@@ -75,12 +74,8 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void printUsageMessage(const char* progName) {
-    fprintf(stderr, "Usage: %s message [-L|-M|-Q|-H] [--help]\n", progName);
-}
-
 void printHelpMessage(const char* progName) {
-    printUsageMessage(progName);
+    printf("Usage: %s [options] message\n", progName);
     printf("\nArguments:\n");
     printf("  message           message used to create QR code\n");
     printf("\nOptions:\n");
@@ -92,5 +87,5 @@ void printHelpMessage(const char* progName) {
     printf("  --help            display this help message\n");
     printf("\nNote: The default error correction level is high\n");
     printf("\nExample:\n");
-    printf("  %s \"Hello, world!\" -L\n", progName);
+    printf("  %s -L \"Hello, world!\"\n", progName);
 }
