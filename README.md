@@ -26,6 +26,7 @@ make
 |-M|Set error correction level to medium (15% of data bytes can be restored)|No|
 |-Q|Set error correction level to quartile (25% of data bytes can be restored)|No|
 |-H|Set error correction level to high (30% of data bytes can be restored)|No|
+|-v, --verbose|Print verbose output|No|
 |--help|Display the help message|No|
 
 The default error correction level is high.

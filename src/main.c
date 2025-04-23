@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,6 +10,7 @@ void printHelpMessage(const char* progName);
 
 int main(int argc, char** argv) {
     ErrorCorrectionLevel ecLevel = EC_H;
+    bool verbose = false;
 
     // TODO: Allow for reading data from files
     // Check if the file will fit in QR code
@@ -16,10 +18,11 @@ int main(int argc, char** argv) {
     int opt;
     const struct option long_options[] = {
         {"help", no_argument, NULL, 0},
+        {"verbose", no_argument, NULL, 'v'},
         {0, 0, 0, 0},
     };
 
-    while ((opt = getopt_long(argc, argv, "LMQH", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "LMQHv", long_options, NULL)) != -1) {
         switch (opt) {
             case 0:
                 printHelpMessage(argv[0]);
@@ -36,6 +39,9 @@ int main(int argc, char** argv) {
                 break;
             case 'H':
                 ecLevel = EC_H;
+                break;
+            case 'v':
+                verbose = true;
                 break;
             default:
                 printUsageMessage(argv[0]);
@@ -54,11 +60,13 @@ int main(int argc, char** argv) {
         message = argv[optind];
     }
 
-    printf("Message: %s\n", message);
-
     QR* qr = createQRCode(message, ecLevel);;
 
-    printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
+    if (verbose) {
+        printf("Message: %s\n", message);
+        printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
+    }
+
     printQR(qr);
 
     freeQR(qr);
@@ -74,13 +82,14 @@ void printUsageMessage(const char* progName) {
 void printHelpMessage(const char* progName) {
     printUsageMessage(progName);
     printf("\nArguments:\n");
-    printf("  message   message used to create QR code\n");
+    printf("  message           message used to create QR code\n");
     printf("\nOptions:\n");
-    printf("  -L        set error correction level to low (7%% of data bytes can be restored)\n");
-    printf("  -M        set error correction level to medium (15%% of data bytes can be restored)\n");
-    printf("  -Q        set error correction level to quartile (25%% of data bytes can be restored)\n");
-    printf("  -H        set error correction level to high (30%% of data bytes can be restored)\n");
-    printf("  --help    display this help message\n");
+    printf("  -L                set error correction level to low\n");
+    printf("  -M                set error correction level to medium\n");
+    printf("  -Q                set error correction level to quartile\n");
+    printf("  -H                set error correction level to high\n");
+    printf("  -v, --verbose     print verbose output\n");
+    printf("  --help            display this help message\n");
     printf("\nNote: The default error correction level is high\n");
     printf("\nExample:\n");
     printf("  %s \"Hello, world!\" -L\n", progName);
