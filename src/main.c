@@ -1,14 +1,22 @@
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "qrencode.h"
 
 int main(int argc, char** argv) {
     ErrorCorrectionLevel ecLevel = EC_H;
 
+    // TODO: Allow for reading data from files
+    // Check if the file will fit in QR code
+    // If not, eventually add structured append functionality
     int opt;
-    while ((opt = getopt(argc, argv, "LMQHh")) != -1) {
+    const struct option long_options[] = {
+        {"help", no_argument, NULL, 'h'},
+        {0, 0, 0, 0},
+    };
+
+    while ((opt = getopt_long(argc, argv, "LMQHh", long_options, NULL)) != -1) {
         switch (opt) {
             case 'L':
                 ecLevel = EC_L;
@@ -37,6 +45,7 @@ int main(int argc, char** argv) {
 
     if (optind >= argc) {
         // No argument provided
+        // TODO: Read from stdin instead
         message = helloWorld;
     } else {
         message = argv[optind];
