@@ -18,6 +18,8 @@
 
 // value to mark a module as unset
 #define UNSET_MODULE 0xFF
+// 7089 is the maximum number of characters storable in a QR code - Version 40-L, Numeric
+#define MAX_QR_CHARS 7089
 
 typedef enum {
     MODE_NUMERIC,

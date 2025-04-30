@@ -11,17 +11,19 @@ int main(int argc, char** argv) {
     ErrorCorrectionLevel ecLevel = EC_H;
     bool verbose = false;
 
-    // TODO: Allow for reading data from files
-    // Check if the file will fit in QR code
-    // If not, eventually add structured append functionality
+    int rc = 0;
     int opt;
+    char* filePath = NULL;
+    bool fileMode = false;
+
     const struct option long_options[] = {
+        {"file", required_argument, NULL, 'f'},
         {"help", no_argument, NULL, 0},
         {"verbose", no_argument, NULL, 'v'},
         {0, 0, 0, 0},
     };
 
-    while ((opt = getopt_long(argc, argv, "LMQHv", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "LMQHvf:", long_options, NULL)) != -1) {
         switch (opt) {
             case 0:
                 printHelpMessage(argv[0]);
@@ -42,6 +44,10 @@ int main(int argc, char** argv) {
             case 'v':
                 verbose = true;
                 break;
+            case 'f':
+                filePath = optarg;
+                fileMode = true;
+                break;
             default:
                 fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
                 exit(EXIT_FAILURE);
@@ -50,22 +56,51 @@ int main(int argc, char** argv) {
 
     char* message = NULL;
     char helloWorld[] = "Hello, world!";
+    char dataBuffer[MAX_QR_CHARS + 1] = {0};
 
-    if (optind >= argc) {
-        // No argument provided
-        // TODO: Read from stdin instead
-        message = helloWorld;
+    if (fileMode) {
+        if (verbose)
+            printf("Input file path: %s\n", filePath);
+
+        FILE* fd = fopen(filePath, "r");
+        if (fd == NULL) {
+            perror(filePath);
+            exit(EXIT_FAILURE);
+        }
+
+        // Read the entire file into dataBuffer -- up to MAX_QR_CHARS
+        int offset = 0;
+        while(fgets(dataBuffer + offset, MAX_QR_CHARS + 1 - offset, fd)) {
+            offset = strnlen(dataBuffer, MAX_QR_CHARS);
+            if (offset == MAX_QR_CHARS)
+                break;
+        }
+        message = dataBuffer;
+
+        rc = fclose(fd);
+        if (rc != 0) {
+            perror("main() - error closing file");
+            exit(EXIT_FAILURE);
+        }
     } else {
-        message = argv[optind];
+        if (optind >= argc) {
+            // No argument provided
+            // TODO: Read from stdin instead
+            message = helloWorld;
+        } else {
+            message = argv[optind];
+        }
     }
 
-    QR* qr = createQRCode(message, ecLevel);;
+    QR* qr = createQRCode(message, ecLevel);
 
     if (verbose) {
-        fprintf(stderr, "Message: %s\n", message);
-        fprintf(stderr, "Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
+        printf("Message: %s\n", message);
+        printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
     }
 
+    // TODO: Check if terminal has enough rows, cols to properly display QR code
+    // TODO: Provide functionality to save QR as an image file
     printQR(qr);
 
     freeQR(qr);
@@ -83,9 +118,12 @@ void printHelpMessage(const char* progName) {
     printf("  -M                set error correction level to medium\n");
     printf("  -Q                set error correction level to quartile\n");
     printf("  -H                set error correction level to high\n");
+    printf("  -f FILE, --file=FILE\n");
+    printf("                    create QR from file\n");
     printf("  -v, --verbose     print verbose output\n");
     printf("  --help            display this help message\n");
     printf("\nNote: The default error correction level is high\n");
-    printf("\nExample:\n");
+    printf("\nExamples:\n");
     printf("  %s -L \"Hello, world!\"\n", progName);
+    printf("  %s --file myfile.txt\n", progName);
 }

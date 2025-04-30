@@ -2,8 +2,7 @@
 
 // TODO: Add Kanji and ECI support
 static EncodingMode calculateEncodingMode(char* data) {
-    // 7089 is the maximum number of characters storable in a QR code - V40, Numeric, Low EC
-    size_t dataLength = strnlen(data, 7089);
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
 
     // Step through data and determine what kind of encoding to use
     // based on the characters in the string
@@ -28,8 +27,7 @@ static EncodingMode calculateEncodingMode(char* data) {
 }
 
 unsigned int calculateQRVersion(char* data, ErrorCorrectionLevel ecLevel) {
-    // 7089 is the maximum number of characters storable in a QR code - V40, Numeric, Low EC
-    size_t dataLength = strnlen(data, 7089);
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
 
 	unsigned int qrVersion = 0;
 
@@ -59,6 +57,12 @@ unsigned int calculateQRVersion(char* data, ErrorCorrectionLevel ecLevel) {
         }
     }
 
+    // The data is too big to fit into the largest QR code.
+    // We will truncate the data to fit the largest QR in the encodeData() function
+    if (qrVersion == 0) {
+        qrVersion = 40;
+    }
+
 	assert(qrVersion > 0 && qrVersion < 41);
     return qrVersion;
 };
@@ -77,8 +81,7 @@ static void numericEncoding(char* data, linkedlist* dataStream, int qrVersion) {
     for (int i = 0; i < 4; i++)
         addLinkedListNode(dataStream, modeIndicator[i]);
 
-    // 7089 is the maximum number of characters storable in a QR code - V40, Numeric, Low EC
-    size_t dataLength = strnlen(data, 7089);
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
 
     assert(dataLength > 0);
     assert(qrVersion >= 1 && qrVersion <= 40);
@@ -179,8 +182,7 @@ static void alphanumericEncoding(char* data, linkedlist* dataStream, int qrVersi
     for (int i = 0; i < 4; i++)
         addLinkedListNode(dataStream, modeIndicator[i]);
 
-    // 7089 is the maximum number of characters storable in a QR code - V40, Numeric, Low EC
-    size_t dataLength = strnlen(data, 7089);
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
 
     assert(dataLength > 0);
     assert(qrVersion >= 1 && qrVersion <= 40);
@@ -222,8 +224,7 @@ static void byteEncoding(char* data, linkedlist* dataStream, int qrVersion) {
     for (int i = 0; i < 4; i++)
         addLinkedListNode(dataStream, modeIndicator[i]);
 
-    // 7089 is the maximum number of characters storable in a QR code - V40, Numeric, Low EC
-    size_t dataLength = strnlen(data, 7089);
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
 
     assert(dataLength > 0);
     assert(qrVersion >= 1 && qrVersion <= 40);
@@ -285,16 +286,25 @@ static void addPadding(linkedlist* dataStream, int qrVersion, ErrorCorrectionLev
 Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel ecLevel) {
     EncodingMode encodingMode = calculateEncodingMode(data);
     linkedlist* dataStream = createLinkedList();
+    unsigned int maxCharacters = 0;
+    char truncatedData[MAX_QR_CHARS + 1] = {0};
 
+    // Truncate the data as necessary and encode using the proper encoding method
     switch (encodingMode) {
         case MODE_NUMERIC:
-            numericEncoding(data, dataStream, qrVersion);
+            maxCharacters = numericCharCapacityLUT[qrVersion][ecLevel];
+            strncpy(truncatedData, data, maxCharacters);
+            numericEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_ALPHANUMERIC:
-            alphanumericEncoding(data, dataStream, qrVersion);
+            maxCharacters = alphanumericCharCapacityLUT[qrVersion][ecLevel];
+            strncpy(truncatedData, data, maxCharacters);
+            alphanumericEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_BYTE:
-            byteEncoding(data, dataStream, qrVersion);
+            maxCharacters = byteCharCapacityLUT[qrVersion][ecLevel];
+            strncpy(truncatedData, data, maxCharacters);
+            byteEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_KANJI:
             assert(0);
@@ -302,6 +312,13 @@ Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel 
         case MODE_ECI:
             assert(0);
             break;
+    }
+
+    size_t dataLength = strnlen(data, MAX_QR_CHARS);
+    size_t truncatedDataLength = strnlen(data, maxCharacters);
+    if (truncatedDataLength < dataLength) {
+        fprintf(stderr, "Warning: Data truncated to %ld characters\n", truncatedDataLength);
+        fprintf(stderr, "Try reducing the error correction level to increase character capacity\n");
     }
 
     addTerminator(dataStream, qrVersion, ecLevel);
