@@ -2,9 +2,9 @@
 
 ## About
 
-This project is a tool for generating QR codes in the terminal. It supports the
-numeric, alphanumeric, and byte encoding modes. All QR versions (1 through 40)
-are supported as well.
+This tool generates QR codes in the terminal. It supports numeric, alphanumeric,
+and byte encoding modes for all QR versions (1 through 40). QR codes can be
+generated from a positional argument, a file, or standard input.
 
 ![Demonstration](extras/demo.png)
 
@@ -18,20 +18,27 @@ make
 
 ## Usage
 
+### Positional Arguments
+
+|**Argument**|**Description**|
+|---|---|
+|message|Message used to create QR code (optional)|
+
 ### Options
 
-|**Option**|**Description**|**Required**|
-|---|---|---|
-|-L|Set error correction level to low (7% of data bytes can be restored)|No|
-|-M|Set error correction level to medium (15% of data bytes can be restored)|No|
-|-Q|Set error correction level to quartile (25% of data bytes can be restored)|No|
-|-H|Set error correction level to high (30% of data bytes can be restored)|No|
-|-f, --file=FILE|Create QR from file|No|
-|-v, --verbose|Print verbose output|No|
-|--help|Display the help message|No|
+|**Option**|**Description**|
+|---|---|
+|-L|Set error correction level to low (7% of data bytes can be restored)|
+|-M|Set error correction level to medium (15% of data bytes can be restored)|
+|-Q|Set error correction level to quartile (25% of data bytes can be restored)|
+|-H|Set error correction level to high (30% of data bytes can be restored)|
+|-f, --file=FILE|Create QR from file (optional)|
+|-v, --verbose|Print verbose output|
+|--help|Display the help message|
 
-If no message argument or file is provided, the program reads from standard input.
-The default error correction level is high.
+- If no message argument or file is provided, the program reads from standard
+input.
+- The default error correction level is high.
 
 ### Examples
 
