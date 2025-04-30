@@ -55,7 +55,6 @@ int main(int argc, char** argv) {
     }
 
     char* message = NULL;
-    char helloWorld[] = "Hello, world!";
     char dataBuffer[MAX_QR_CHARS + 1] = {0};
 
     if (fileMode) {
@@ -85,8 +84,13 @@ int main(int argc, char** argv) {
     } else {
         if (optind >= argc) {
             // No argument provided
-            // TODO: Read from stdin instead
-            message = helloWorld;
+            int offset = 0;
+            while(fgets(dataBuffer + offset, MAX_QR_CHARS + 1 - offset, stdin)) {
+                offset = strnlen(dataBuffer, MAX_QR_CHARS);
+                if (offset == MAX_QR_CHARS)
+                    break;
+            }
+            message = dataBuffer;
         } else {
             message = argv[optind];
         }
@@ -110,9 +114,9 @@ int main(int argc, char** argv) {
 }
 
 void printHelpMessage(const char* progName) {
-    printf("Usage: %s [options] message\n", progName);
+    printf("Usage: %s [options] [message]\n", progName);
     printf("\nArguments:\n");
-    printf("  message           message used to create QR code\n");
+    printf("  message           message used to create QR code (optional)\n");
     printf("\nOptions:\n");
     printf("  -L                set error correction level to low\n");
     printf("  -M                set error correction level to medium\n");
@@ -122,8 +126,12 @@ void printHelpMessage(const char* progName) {
     printf("                    create QR from file\n");
     printf("  -v, --verbose     print verbose output\n");
     printf("  --help            display this help message\n");
-    printf("\nNote: The default error correction level is high\n");
+    printf("\nNotes:\n");
+    printf("  If no message argument or file is provided, %s reads from standard input.\n", progName);
+    printf("  The default error correction level is high.\n");
     printf("\nExamples:\n");
     printf("  %s -L \"Hello, world!\"\n", progName);
-    printf("  %s --file myfile.txt\n", progName);
+    printf("  %s --file ~/.ssh/id_rsa.pub\n", progName);
+    printf("  %s -M < myfile.txt\n", progName);
+    printf("  ls | %s\n", progName);
 }
