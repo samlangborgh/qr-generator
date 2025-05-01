@@ -6,12 +6,12 @@
 #include "qrencode.h"
 
 void printHelpMessage(const char* progName);
+char* readFile(char* filePath);
 
 int main(int argc, char** argv) {
-    ErrorCorrectionLevel ecLevel = EC_H;
+    ErrorCorrectionLevel ecLevel = EC_M;
     bool verbose = false;
 
-    int rc = 0;
     int opt;
     char* filePath = NULL;
     bool fileMode = false;
@@ -54,45 +54,25 @@ int main(int argc, char** argv) {
         }
     }
 
-    char* message = NULL;
-    char dataBuffer[MAX_QR_CHARS + 1] = {0};
+    char* message = argv[optind];
+    bool stdinMode = optind >= argc; // No argument provided - read from stdin
 
     if (fileMode) {
         if (verbose)
             printf("Input file path: %s\n", filePath);
-
-        FILE* fd = fopen(filePath, "r");
-        if (fd == NULL) {
-            perror(filePath);
+        message = readFile(filePath);
+    } else if (stdinMode) {
+        message = (char*)malloc(sizeof(char) * (MAX_QR_CHARS + 1));
+        if (message == NULL) {
+            perror("main() - failed to malloc");
             exit(EXIT_FAILURE);
         }
 
-        // Read the entire file into dataBuffer -- up to MAX_QR_CHARS
         int offset = 0;
-        while(fgets(dataBuffer + offset, MAX_QR_CHARS + 1 - offset, fd)) {
-            offset = strnlen(dataBuffer, MAX_QR_CHARS);
+        while(fgets(message + offset, MAX_QR_CHARS + 1 - offset, stdin)) {
+            offset = strnlen(message, MAX_QR_CHARS);
             if (offset == MAX_QR_CHARS)
                 break;
-        }
-        message = dataBuffer;
-
-        rc = fclose(fd);
-        if (rc != 0) {
-            perror("main() - error closing file");
-            exit(EXIT_FAILURE);
-        }
-    } else {
-        if (optind >= argc) {
-            // No argument provided
-            int offset = 0;
-            while(fgets(dataBuffer + offset, MAX_QR_CHARS + 1 - offset, stdin)) {
-                offset = strnlen(dataBuffer, MAX_QR_CHARS);
-                if (offset == MAX_QR_CHARS)
-                    break;
-            }
-            message = dataBuffer;
-        } else {
-            message = argv[optind];
         }
     }
 
@@ -102,9 +82,16 @@ int main(int argc, char** argv) {
         printf("Message: %s\n", message);
         printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
     }
+    if (fileMode || stdinMode) {
+        free(message);
+        message = NULL;
+    }
 
     // TODO: Check if terminal has enough rows, cols to properly display QR code
     // TODO: Provide functionality to save QR as an image file
+    // TODO: Allow for flipping the printed QR "polarity"
+    // TODO: Encode data more efficiently by using different encoding blocks
+    // e.g. encode some data with numeric encoding, other with byte encoding, etc.
     printQR(qr);
 
     freeQR(qr);
@@ -128,10 +115,60 @@ void printHelpMessage(const char* progName) {
     printf("  --help            display this help message\n");
     printf("\nNotes:\n");
     printf("  If no message argument or file is provided, %s reads from standard input.\n", progName);
-    printf("  The default error correction level is high.\n");
+    printf("  The default error correction level is medium.\n");
     printf("\nExamples:\n");
     printf("  %s -L \"Hello, world!\"\n", progName);
     printf("  %s --file ~/.ssh/id_rsa.pub\n", progName);
-    printf("  %s -M < myfile.txt\n", progName);
+    printf("  %s -H < myfile.txt\n", progName);
     printf("  ls | %s\n", progName);
+}
+
+char* readFile(char* filePath) {
+    int rc = 0;
+
+    FILE* fd = fopen(filePath, "r");
+    if (fd == NULL) {
+        perror(filePath);
+        exit(EXIT_FAILURE);
+    }
+
+    // Seek to the end of the file so we can get the file length
+    rc = fseek(fd, 0, SEEK_END);
+    if (rc == -1) {
+        perror(filePath);
+        exit(EXIT_FAILURE);
+    }
+
+    long fileLength = ftell(fd);
+    if (fileLength == -1) {
+        perror("readFile() - error getting file length");
+        exit(EXIT_FAILURE);
+    }
+
+    rewind(fd);
+
+    if (fileLength > MAX_QR_CHARS)
+        fileLength = MAX_QR_CHARS;
+
+    char* dataBuffer = (char*)malloc(sizeof(char) * (fileLength + 1));
+    if (dataBuffer == NULL) {
+        perror("readFile() - failed to malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read the entire file into dataBuffer -- up to fileLength bytes
+    int offset = 0;
+    while(fgets(dataBuffer + offset, fileLength + 1 - offset, fd)) {
+        offset = strnlen(dataBuffer, fileLength);
+        if (offset == fileLength)
+            break;
+    }
+
+    rc = fclose(fd);
+    if (rc != 0) {
+        perror("readFile() - error closing file");
+        exit(EXIT_FAILURE);
+    }
+
+    return dataBuffer;
 }

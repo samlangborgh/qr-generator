@@ -38,7 +38,7 @@ make
 
 - If no message argument or file is provided, the program reads from standard
 input.
-- The default error correction level is high.
+- The default error correction level is medium.
 
 ### Examples
 
@@ -46,7 +46,7 @@ input.
 ./qr -L "The quick brown fox jumps over the lazy dog."
 ./qr https://github.com/Slangborgh16/qr-generator
 ./qr --file ~/.ssh/id_rsa.pub
-./qr -M < myfile.txt
+./qr -H < myfile.txt
 ls | ./qr
 ```
 
