@@ -58,12 +58,11 @@ unsigned int calculateQRVersion(char* data, ErrorCorrectionLevel ecLevel) {
     }
 
     // The data is too big to fit into the largest QR code.
-    // We will truncate the data to fit the largest QR in the encodeData() function
+    // We will truncate the data to fit the largest QR later
     if (qrVersion == 0) {
         qrVersion = 40;
     }
 
-	assert(qrVersion > 0 && qrVersion < 41);
     return qrVersion;
 };
 
@@ -87,13 +86,13 @@ static void numericEncoding(char* data, linkedlist* dataStream, int qrVersion) {
     assert(qrVersion >= 1 && qrVersion <= 40);
 
     int numBits;
-    if (qrVersion >= 1 && qrVersion <= 9) {
+    if (qrVersion <= 9) {
         // 10 bit character count
         numBits = 10;
     } else if (qrVersion >= 10 && qrVersion <= 26) {
         // 12 bit character count
         numBits = 12;
-    } else if (qrVersion >= 27 && qrVersion <= 40) {
+    } else {
         // 14 bit character count
         numBits = 14;
     }
@@ -144,31 +143,22 @@ static unsigned int getAlphanumericCode(char c) {
     switch (c) {
         case 32:
             return 36;
-            break;
         case '$':
             return 37;
-            break;
         case '%':
             return 38;
-            break;
         case '*':
             return 39;
-            break;
         case '+':
             return 40;
-            break;
         case '-':
             return 41;
-            break;
         case '.':
             return 42;
-            break;
         case '/':
             return 43;
-            break;
         case ':':
             return 44;
-            break;
         default:
             assert(0);
     }
@@ -188,13 +178,13 @@ static void alphanumericEncoding(char* data, linkedlist* dataStream, int qrVersi
     assert(qrVersion >= 1 && qrVersion <= 40);
 
     int numBits;
-    if (qrVersion >= 1 && qrVersion <= 9) {
+    if (qrVersion <= 9) {
         // 9 bit character count
         numBits = 9;
     } else if (qrVersion >= 10 && qrVersion <= 26) {
         // 11 bit character count
         numBits = 11;
-    } else if (qrVersion >= 27 && qrVersion <= 40) {
+    } else {
         // 13 bit character count
         numBits = 13;
     }
@@ -230,10 +220,10 @@ static void byteEncoding(char* data, linkedlist* dataStream, int qrVersion) {
     assert(qrVersion >= 1 && qrVersion <= 40);
 
     int numBits;
-    if (qrVersion >= 1 && qrVersion <= 9) {
+    if (qrVersion <= 9) {
         // 8 bit character count
         numBits = 8;
-    } else if (qrVersion >= 10 && qrVersion <= 40) {
+    } else {
         // 16 bit character count
         numBits = 16;
     }
@@ -283,28 +273,20 @@ static void addPadding(linkedlist* dataStream, int qrVersion, ErrorCorrectionLev
     }
 }
 
-Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel ecLevel) {
+unsigned int getMaxQRCharacters(char* data, ErrorCorrectionLevel ecLevel) {
+    unsigned int qrVersion = calculateQRVersion(data, ecLevel);
     EncodingMode encodingMode = calculateEncodingMode(data);
-    linkedlist* dataStream = createLinkedList();
-    unsigned int maxCharacters = 0;
-    char truncatedData[MAX_QR_CHARS + 1] = {0};
 
-    // Truncate the data as necessary and encode using the proper encoding method
+    unsigned int maxCharacters = 0;
     switch (encodingMode) {
         case MODE_NUMERIC:
             maxCharacters = numericCharCapacityLUT[qrVersion][ecLevel];
-            strncpy(truncatedData, data, maxCharacters);
-            numericEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_ALPHANUMERIC:
             maxCharacters = alphanumericCharCapacityLUT[qrVersion][ecLevel];
-            strncpy(truncatedData, data, maxCharacters);
-            alphanumericEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_BYTE:
             maxCharacters = byteCharCapacityLUT[qrVersion][ecLevel];
-            strncpy(truncatedData, data, maxCharacters);
-            byteEncoding(truncatedData, dataStream, qrVersion);
             break;
         case MODE_KANJI:
             assert(0);
@@ -314,11 +296,31 @@ Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel 
             break;
     }
 
-    size_t dataLength = strnlen(data, MAX_QR_CHARS);
-    size_t truncatedDataLength = strnlen(data, maxCharacters);
-    if (truncatedDataLength < dataLength) {
-        fprintf(stderr, "Warning: Data truncated to %ld characters\n", truncatedDataLength);
-        fprintf(stderr, "Try reducing the error correction level to increase character capacity\n");
+    return maxCharacters;
+}
+
+Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel ecLevel) {
+    assert(qrVersion >= 1 && qrVersion <= 40);
+
+    EncodingMode encodingMode = calculateEncodingMode(data);
+    linkedlist* dataStream = createLinkedList();
+
+    switch (encodingMode) {
+        case MODE_NUMERIC:
+            numericEncoding(data, dataStream, qrVersion);
+            break;
+        case MODE_ALPHANUMERIC:
+            alphanumericEncoding(data, dataStream, qrVersion);
+            break;
+        case MODE_BYTE:
+            byteEncoding(data, dataStream, qrVersion);
+            break;
+        case MODE_KANJI:
+            assert(0);
+            break;
+        case MODE_ECI:
+            assert(0);
+            break;
     }
 
     addTerminator(dataStream, qrVersion, ecLevel);
@@ -491,20 +493,6 @@ linkedlist* structureFinalMessage(DataBlocks* encodedDataBlocks, DataBlocks* rsC
     return finalMessage;
 }
 
-void printDataBlocks(DataBlocks* dataBlocks) {
-    printf("Group 1 blocks:\n");
-    for (int i = 0; i < dataBlocks->numGroup1Blocks; i++) {
-        printPolynomial(dataBlocks->group1[i]);
-        printf("\n");
-    }
-
-    printf("Group 2 blocks:\n");
-    for (int i = 0; i < dataBlocks->numGroup2Blocks; i++) {
-        printPolynomial(dataBlocks->group2[i]);
-        printf("\n");
-    }
-}
-
 void freeDataBlocks(DataBlocks* dataBlocks) {
     // Free the polynomial slices in group 1
     for (int i = 0; i < dataBlocks->numGroup1Blocks; i++) {
@@ -597,11 +585,11 @@ void addFinderPatterns(QR* qr) {
 void addSeparators(QR* qr) {
     unsigned int width = qr->width;
     for (int i = 0; i < 8; i++) {
-        qr->data[7][i] = 0;              //top left
+        qr->data[7][i] = 0;                 //top left
         qr->data[i][7] = 0;
-        qr->data[7][width - 8 + i] = 0;   //top right
-        qr->data[i][width - 8] = 0;   //top right
-        qr->data[width - 8][i] = 0;       //bottom left
+        qr->data[7][width - 8 + i] = 0;     //top right
+        qr->data[i][width - 8] = 0;         //top right
+        qr->data[width - 8][i] = 0;         //bottom left
         qr->data[width - 8 + i][7] = 0;
     }
 }

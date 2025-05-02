@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "qrencode.h"
 
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    char* message = argv[optind];
+    char* message = NULL;
     bool stdinMode = optind >= argc; // No argument provided - read from stdin
 
     if (fileMode) {
@@ -74,6 +75,27 @@ int main(int argc, char** argv) {
             if (offset == MAX_QR_CHARS)
                 break;
         }
+    } else {
+        // Read data from a positional argument
+        size_t argSize = strnlen(argv[optind], MAX_QR_CHARS);
+        message = (char*)malloc(sizeof(char) * (argSize + 1));
+        if (message == NULL) {
+            perror("main() - failed to malloc");
+            exit(EXIT_FAILURE);
+        }
+        strncpy(message, argv[optind], argSize);
+    }
+
+    // Truncate data if necessary
+    unsigned int maxQRCharacters = getMaxQRCharacters(message, ecLevel);
+    unsigned int messageLength = (unsigned int)strnlen(message, MAX_QR_CHARS);
+
+    if (maxQRCharacters < messageLength) {
+        message = realloc(message, sizeof(char) * (maxQRCharacters + 1));
+        message[maxQRCharacters] = 0;
+
+        fprintf(stderr, "Warning: Data truncated to %d characters\n", maxQRCharacters);
+        fprintf(stderr, "Try reducing the error correction level to increase character capacity\n");
     }
 
     QR* qr = createQRCode(message, ecLevel);
@@ -82,10 +104,9 @@ int main(int argc, char** argv) {
         printf("Message: %s\n", message);
         printf("Version %d - Size: %dx%d\n", qr->version, qr->width, qr->width);
     }
-    if (fileMode || stdinMode) {
-        free(message);
-        message = NULL;
-    }
+
+    free(message);
+    message = NULL;
 
     // TODO: Check if terminal has enough rows, cols to properly display QR code
     // TODO: Provide functionality to save QR as an image file

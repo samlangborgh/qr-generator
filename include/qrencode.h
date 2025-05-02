@@ -53,6 +53,7 @@ typedef struct DataBlocks {
 
 // Data encoding functions
 unsigned int calculateQRVersion(char* data, ErrorCorrectionLevel ecLevel);
+unsigned int getMaxQRCharacters(char* data, ErrorCorrectionLevel ecLevel);
 Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel ecLevel);
 DataBlocks* fragmentEncodedData(Polynomial* encodedData, unsigned int qrVersion,
         ErrorCorrectionLevel ecLevel);
@@ -60,7 +61,6 @@ DataBlocks* rsEncodeDataBlocks(DataBlocks* dataBlocks, unsigned int qrVersion,
         ErrorCorrectionLevel ecLevel);
 linkedlist* structureFinalMessage(DataBlocks* encodedDataBlocks, DataBlocks* rsCodewordBlocks,
         unsigned int qrVersion, ErrorCorrectionLevel ecLevel);
-void printDataBlocks(DataBlocks* dataBlocks);
 void freeDataBlocks(DataBlocks* dataBlocks);
 
 // Module placement functions
