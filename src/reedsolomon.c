@@ -70,25 +70,16 @@ static const unsigned int gf256antilogLUT[256] = {
     27, 54, 108, 216, 173, 71, 142, 1
 };
 
-unsigned int gf256Log(unsigned int a) {
-    assert(a != 0);
-    return gf256logLUT[a];
-}
-
-unsigned int gf256Antilog(unsigned int a) {
-    return gf256antilogLUT[a];
-}
-
 unsigned int gf256Multiply(unsigned int a, unsigned int b) {
-    unsigned int logA = gf256Log(a);
-    unsigned int logB = gf256Log(b);
+    unsigned int logA = gf256logLUT[a];
+    unsigned int logB = gf256logLUT[b];
 
     unsigned int sum = logA + logB;
 
     if (sum >= 256)
         sum %= 255;
 
-    return gf256Antilog(sum);
+    return gf256antilogLUT[sum];
 }
 
 void freePolyDivisionResult(PolyDivisionResult* result) {
@@ -181,14 +172,6 @@ PolyDivisionResult* gf256PolyDivide(Polynomial* dividend, Polynomial* divisor) {
     return result;
 }
 
-unsigned int gf256PolyEval(Polynomial* p, unsigned int x) {
-    assert(p->size > 0);
-    unsigned int y = p->data[0];
-    for (int i = 1; i < p->size; i++)
-        y = gf256Multiply(y, x) ^ p->data[i];
-    return y;
-}
-
 Polynomial* createGeneratorPolynomial(unsigned int numECCodewords) {
     assert(numECCodewords >= 7 && numECCodewords <= 30);
     Polynomial* p = createPolynomial(1);
@@ -198,7 +181,7 @@ Polynomial* createGeneratorPolynomial(unsigned int numECCodewords) {
     for (int i = 0; i < numECCodewords; i++) {
         Polynomial* q = createPolynomial(2);
         q->data[0] = 1;
-        q->data[1] = gf256Antilog(i);
+        q->data[1] = gf256antilogLUT[i];
 
         tmpPoly = gf256PolyMultiply(p, q);
         freePolynomial(p);
