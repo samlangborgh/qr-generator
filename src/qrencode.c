@@ -334,10 +334,12 @@ Polynomial* encodeData(char* data, unsigned int qrVersion, ErrorCorrectionLevel 
     size_t codewordsSize = dataStreamBits / 8;
     Polynomial* codewordsPolynomial = createPolynomial(codewordsSize);
 
+    struct linkedlistNode* currentNode = dataStream->head;
     for (int i = 0; i < codewordsSize; i++) {
         for (int j = 0; j < 8; j++) {
-            unsigned char val = getNodeData(dataStream, i*8 + j) << (7 - j);
+            unsigned char val = currentNode->data << (7 - j);
             codewordsPolynomial->data[i] |= val;
+            currentNode = currentNode->next;
         }
     }
 
@@ -784,6 +786,7 @@ void placeDataBits(QR* qr, linkedlist* data) {
     unsigned int counter = 0;   // Used to help fill in the modules in a zigzag pattern
 
     unsigned int placedBits = 0;
+    struct linkedlistNode* currentNode = data->head;
 
     // Place each data bit into the QR code
     while (placedBits < data->size) {
@@ -807,7 +810,8 @@ void placeDataBits(QR* qr, linkedlist* data) {
         // Only place a bit if the module is unset (0xFF)
         // So we don't overwrite finder patterns, etc.
         if (qr->data[yPos][xPos] == UNSET_MODULE) {
-            qr->data[yPos][xPos] = getNodeData(data, placedBits);
+            qr->data[yPos][xPos] = currentNode->data;
+            currentNode = currentNode->next;
             placedBits++;
         }
 
