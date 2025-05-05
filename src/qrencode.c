@@ -1162,13 +1162,15 @@ QR* createQRCode(char* data, ErrorCorrectionLevel ecLevel) {
 
 void printQR(QR* qr) {
     unsigned int width = qr->width;
-    for (int i = 0; i < width + 2; i++)
-        printf("██");
-    printf("\n");
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < width + 8; j++)
+            printf("██");
+        printf("\n");
+    }
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < width; j++) {
             if (j == 0)
-                printf("██");
+                printf("████████");
             unsigned int num = qr->data[i][j];
             if (num == 0) {
                 printf("██");
@@ -1187,11 +1189,13 @@ void printQR(QR* qr) {
                 printf("░░");
             }
             if (j == width - 1)
-                printf("██");
+                printf("████████");
         }
         printf("\n");
     }
-    for (int i = 0; i < width + 2; i++)
-        printf("██");
-    printf("\n");
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < width + 8; j++)
+            printf("██");
+        printf("\n");
+    }
 }
