@@ -32,6 +32,7 @@ make
 |-M|Set error correction level to medium (15% of data bytes can be restored)|
 |-Q|Set error correction level to quartile (25% of data bytes can be restored)|
 |-H|Set error correction level to high (30% of data bytes can be restored)|
+|-i, --invert|Invert the colors of the QR code|
 |-f, --file=FILE|Create QR from file (optional)|
 |-v, --verbose|Print verbose output|
 |--help|Display the help message|

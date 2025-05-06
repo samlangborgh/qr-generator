@@ -85,6 +85,6 @@ unsigned int scoreQR(QR* qr);
 unsigned int calculateBestMask(QR* qr, QR* blankQR);
 
 QR* createQRCode(char* data, ErrorCorrectionLevel ecLevel);
-void printQR(QR* qr);
+void printQR(QR* qr, bool invertColors);
 
 #endif

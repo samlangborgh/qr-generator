@@ -16,15 +16,17 @@ int main(int argc, char** argv) {
     int opt;
     char* filePath = NULL;
     bool fileMode = false;
+    bool invertColors = false;
 
     const struct option long_options[] = {
+        {"invert", no_argument, NULL, 'i'},
         {"file", required_argument, NULL, 'f'},
         {"help", no_argument, NULL, 0},
         {"verbose", no_argument, NULL, 'v'},
         {0, 0, 0, 0},
     };
 
-    while ((opt = getopt_long(argc, argv, "LMQHvf:", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "LMQHvif:", long_options, NULL)) != -1) {
         switch (opt) {
             case 0:
                 printHelpMessage(argv[0]);
@@ -48,6 +50,9 @@ int main(int argc, char** argv) {
             case 'f':
                 filePath = optarg;
                 fileMode = true;
+                break;
+            case 'i':
+                invertColors = true;
                 break;
             default:
                 fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
@@ -110,10 +115,9 @@ int main(int argc, char** argv) {
 
     // TODO: Check if terminal has enough rows, cols to properly display QR code
     // TODO: Provide functionality to save QR as an image file
-    // TODO: Allow for flipping the printed QR "polarity"
     // TODO: Encode data more efficiently by using different encoding blocks
     // e.g. encode some data with numeric encoding, other with byte encoding, etc.
-    printQR(qr);
+    printQR(qr, invertColors);
 
     freeQR(qr);
     qr = NULL;
@@ -130,6 +134,7 @@ void printHelpMessage(const char* progName) {
     printf("  -M                set error correction level to medium\n");
     printf("  -Q                set error correction level to quartile\n");
     printf("  -H                set error correction level to high\n");
+    printf("  -i, --invert      invert the colors of the QR code\n");
     printf("  -f FILE, --file=FILE\n");
     printf("                    create QR from file\n");
     printf("  -v, --verbose     print verbose output\n");

@@ -1149,22 +1149,27 @@ QR* createQRCode(char* data, ErrorCorrectionLevel ecLevel) {
     return finalQR;
 }
 
-void printQR(QR* qr) {
+void printQR(QR* qr, bool invertColors) {
+    char fullBlock[] = "██";
+    char spaces[] = "  ";
+    char* darkModule = invertColors ? fullBlock : spaces;
+    char* lightModule = invertColors ? spaces : fullBlock;
+
     unsigned int width = qr->width;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < width + 8; j++)
-            printf("██");
+            printf("%s", lightModule);
         printf("\n");
     }
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < width; j++) {
             if (j == 0)
-                printf("████████");
+                printf("%s%s%s%s", lightModule, lightModule, lightModule, lightModule);
             unsigned int num = qr->data[i][j];
             if (num == 0) {
-                printf("██");
+                printf("%s", lightModule);
             } else if (num == 1) {
-                printf("  ");
+                printf("%s", darkModule);
             } else if (num == 2) {
                 // print in blue
                 printf("\e[0;34m██\e[0m");
@@ -1178,13 +1183,13 @@ void printQR(QR* qr) {
                 printf("░░");
             }
             if (j == width - 1)
-                printf("████████");
+                printf("%s%s%s%s", lightModule, lightModule, lightModule, lightModule);
         }
         printf("\n");
     }
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < width + 8; j++)
-            printf("██");
+            printf("%s", lightModule);
         printf("\n");
     }
 }
