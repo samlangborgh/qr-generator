@@ -920,55 +920,46 @@ static unsigned int scoreCondition1(QR* qr) {
      */
     unsigned int score = 0;
 
-    // Calculate horizontal penalty
-    unsigned int prevColor = 2;
-    unsigned int consecutiveCount = 1;
+    // Calculate horizontal penalty and vertical penalty simultaneously
+    unsigned int horizPrevColor = 2; // arbitrary value that isn't 0 or 1
+    unsigned int vertPrevColor = 2;
+    unsigned int horizConsecutiveCount = 1;
+    unsigned int vertConsecutiveCount = 1;
     for (int i = 0; i < qr->width; i++) {
         for (int j = 0; j < qr->width; j++) {
-            unsigned int curColor = qr->data[i][j];
-            if (curColor != prevColor) {
-                prevColor = curColor;
-                consecutiveCount = 1;
-                continue;
+            unsigned int horizCurColor = qr->data[i][j];
+            unsigned int vertCurColor = qr->data[j][i];
+            if (horizCurColor != horizPrevColor) {
+                horizPrevColor = horizCurColor;
+                horizConsecutiveCount = 1;
+            } else {
+                horizConsecutiveCount++;
+
+                if (horizConsecutiveCount == 5)
+                    score += 3;
+
+                if (horizConsecutiveCount > 5)
+                    score++;
             }
+            if (vertCurColor != vertPrevColor) {
+                vertPrevColor = vertCurColor;
+                vertConsecutiveCount = 1;
+            } else {
+                vertConsecutiveCount++;
 
-            consecutiveCount++;
+                if (vertConsecutiveCount == 5)
+                    score += 3;
 
-            if (consecutiveCount == 5)
-                score += 3;
-
-            if (consecutiveCount > 5)
-                score++;
-        }
-        prevColor = 2;
-        consecutiveCount = 1;
-    }
-    // printf("Horizontal penalty: %d\n", horizontalPenalty);
-
-    // Calculate vertical penalty
-    prevColor = 2;
-    consecutiveCount = 1;
-    for (int j = 0; j < qr->width; j++) {
-        for (int i = 0; i < qr->width; i++) {
-            unsigned int curColor = qr->data[i][j];
-            if (curColor != prevColor) {
-                prevColor = curColor;
-                consecutiveCount = 1;
-                continue;
+                if (vertConsecutiveCount > 5)
+                    score++;
             }
-
-            consecutiveCount++;
-
-            if (consecutiveCount == 5)
-                score += 3;
-
-            if (consecutiveCount > 5)
-                score++;
         }
-        prevColor = 2;
-        consecutiveCount = 1;
+        horizPrevColor = 2;
+        vertPrevColor = 2;
+        horizConsecutiveCount = 1;
+        vertConsecutiveCount = 1;
     }
-    // printf("Vertical penalty: %d\n", verticalPenalty);
+
     return score;
 }
 
@@ -1006,16 +997,17 @@ static unsigned int scoreCondition3(QR* qr) {
     unsigned int pattern1[] = {1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0};
     unsigned int pattern2[] = {0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1};
 
-    // Check the rows
     for (int i = 0; i < qr->width; i++) {
         for (int j = 0; j < qr->width - 10; j++) {
+            // Check the rows
             bool pattern1Match = true;
             bool pattern2Match = true;
             for (int k = 0; k < 11; k++) {
-                if (qr->data[i][j+k] != pattern1[k]) {
+                unsigned int curRowModule = qr->data[i][j+k];
+                if (curRowModule != pattern1[k]) {
                     pattern1Match = false;
                 }
-                if (qr->data[i][j+k] != pattern2[k]) {
+                if (curRowModule != pattern2[k]) {
                     pattern2Match = false;
                 }
                 if ((pattern1Match == false) && (pattern2Match == false))
@@ -1023,19 +1015,16 @@ static unsigned int scoreCondition3(QR* qr) {
             }
             if (pattern1Match || pattern2Match)
                 score += 40;
-        }
-    }
 
-    // Check the columns
-    for (int j = 0; j < qr->width; j++) {
-        for (int i = 0; i < qr->width - 10; i++) {
-            bool pattern1Match = true;
-            bool pattern2Match = true;
+            // Check the columns
+            pattern1Match = true;
+            pattern2Match = true;
             for (int k = 0; k < 11; k++) {
-                if (qr->data[i+k][j] != pattern1[k]) {
+                unsigned int curColModule = qr->data[j+k][i];
+                if (curColModule != pattern1[k]) {
                     pattern1Match = false;
                 }
-                if (qr->data[i+k][j] != pattern2[k]) {
+                if (curColModule != pattern2[k]) {
                     pattern2Match = false;
                 }
                 if ((pattern1Match == false) && (pattern2Match == false))
