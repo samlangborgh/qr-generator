@@ -11,7 +11,7 @@ generated from a positional argument, a file, or standard input.
 ## Building
 
 ```bash
-git clone https://github.com/Slangborgh16/qr-generator.git
+git clone https://github.com/samlangborgh/qr-generator.git
 cd qr-generator
 make
 ```
@@ -45,7 +45,7 @@ input.
 
 ```bash
 ./qr -L "The quick brown fox jumps over the lazy dog."
-./qr https://github.com/Slangborgh16/qr-generator
+./qr https://github.com/samlangborgh/qr-generator
 ./qr --file ~/.ssh/id_rsa.pub
 ./qr -H < myfile.txt
 ls | ./qr
